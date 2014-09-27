@@ -1,13 +1,12 @@
 #!/bin/env bash
 
-#web_dir=/home/joerong/local/fooyun/fooyun-web-beta
-#webcls_dir=/home/joerong/local/fooyun/fooyun-web-beta_cls
-#mgr_dir=/home/joerong/local/fooyun/fooyun-mngrserver-beta_x86_64/bin
-#func_dir=/home/joerong/local/func/func_all_in-uc-bin_x64/bin
-
+PWD=`dirname $0`
 METHODS="start|stop|restart"
 SERVICES="web_admin|web_api|mgr|func_master|func_slave"
 log_level="debug"
+g_method="$1"
+g_service="$2"
+g_basedir="$3"
 
 usage()
 {
@@ -38,9 +37,9 @@ function op_web() {
     fi
 
     case "$method" in
-        "start") ./cronservice.sh -m start -c "play start" -d "$base_dir"
+        "start") $PWD/start_check.sh $g_service $g_basedir && ./cronservice.sh -m start -c "play start" -d "$base_dir"
             ;;
-        "stop") ./cronservice.sh -m stop -c "play stop" -d "$base_dir" -e "play start"; rm -f $base_dir/server.pid
+        "stop") ./cronservice.sh -m stop -c "play stop" -d "$base_dir" -e "play start"
             ;;
         "restart") ./cronservice.sh -m restart -c "play restart" -d "$base_dir"
             ;;
@@ -58,12 +57,12 @@ function op_mgr() {
     fi
 
     case "$method" in
-        "start") ./cronservice.sh -m start -c "$base_dir/uchas -f fooyun_mngr.ini -d" -d "$base_dir"
+        "start") $PWD/start_check.sh $g_service $g_basedir && ./cronservice.sh -m start -c "$base_dir/uchas -f fooyun_mngr.ini -d" -d "$base_dir"
             ;;
-        "stop") ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/uchas|grep -v 'grep' |awk '{print \$1}'\" |xargs kill -9" -d "$base_dir" -e "$base_dir/uchas -f fooyun_mngr.ini"
+        "stop") ./cronservice.sh -m stop -c "ps x |fgrep \"$base_dir/uchas\"|fgrep -v 'fgrep' |awk '{print \$1}' |xargs kill -9" -d "$base_dir" -e "$base_dir/uchas -f fooyun_mngr.ini"
             ;;
         "restart") 
-            ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/uchas|grep -v 'grep' |awk '{print \$1}'\" |xargs kill -9" -d "$base_dir" -e "$base_dir/uchas -f fooyun_mngr.ini"
+            ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/uchas\"|grep -v 'grep' |awk '{print \$1}' |xargs kill -9" -d "$base_dir" -e "$base_dir/uchas -f fooyun_mngr.ini" && \
             ./cronservice.sh -m start -c "$base_dir/uchas -f fooyun_mngr.ini -d" -d "$base_dir"
             ;;
     esac
@@ -81,30 +80,33 @@ function op_func() {
     fi
 
     case "$method" in
-        "start") ./cronservice.sh -m start -c "$base_dir/python $func_role --daemon" -d "$base_dir"
+        "start") $PWD/start_check.sh $g_service $g_basedir && ./cronservice.sh -m start -c "$base_dir/python $func_role --daemon" -d "$base_dir"
             ;;
-        "stop") ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/python $func_role|grep -v 'grep' |awk '{print \$1}'\" |xargs kill -9" -d "$base_dir" -e "$base_dir/python $func_role"
+        "stop") ./cronservice.sh -m stop -c "ps x |fgrep \"$base_dir/python $func_role\" |grep -v 'grep' |awk '{print \$1}' |xargs kill -9" -d "$base_dir" -e "$base_dir/python $func_role"
             ;;
         "restart") 
-            ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/python $func_role|grep -v 'grep' |awk '{print \$1}'\" |xargs kill -9" -d "$base_dir" -e "$base_dir/python $func_role"
+            ./cronservice.sh -m stop -c "ps x|grep \"$base_dir/python $func_role|grep -v 'grep' |awk '{print \$1}'\" |xargs kill -9" -d "$base_dir" -e "$base_dir/python $func_role" && \
             ./cronservice.sh -m start -c "$base_dir/python $func_role --daemon" -d "$base_dir"
             ;;
     esac
 }
 
 [ $# -ne 3 ] && usage
-[ -z "`echo $1 |egrep '$METHODS'`" ] && usage
-[ -z "`echo $2 |egrep '$SERVICES'`" ] && usage
+[ -z "`echo $1 |egrep "$METHODS"`" ] && usage
+[ -z "`echo $2 |egrep "$SERVICES"`" ] && usage
 
+log_info "---------- begin to $1 $2 ---------------"
 case "$2" in
-    "web_admin") 
+    "web_admin") op_web $1 $3 
+        ;;
     "web_api") op_web $1 $3
         ;;
     "mgr") op_mgr $1 $3
         ;;
-    "func_master") op_mgr $1 $3 "certmaster"
+    "func_master") op_func $1 $3 "certmaster"
         ;;
-    "func_slave") op_mgr $1 $3 "funcd"
+    "func_slave") op_func $1 $3 "funcd"
         ;;
 esac
+log_info "----------- $1 $2 finished ---------------"
 
