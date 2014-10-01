@@ -103,7 +103,7 @@ function check_start() {
             ;;
         "mgr") 
             log_debug "check whether $g_service exist"
-            proc="`ps x |fgrep "$g_basedir/uchas" |fgrep -v "$CURRENT_FILE"`"
+            proc="`ps x |fgrep "$g_basedir/uchas" |fgrep -v "$CURRENT_FILE" |fgrep -v 'fgrep'`"
             [ -z "$proc" ] && return 0
 
             log_debug "hit proc[$proc]"
@@ -111,7 +111,7 @@ function check_start() {
             ;;
         "func_master") 
             log_debug "check whether $g_serivce exist"
-            proc="`ps x |fgrep "$g_basedir/python certmaster" |fgrep -v "$CURRENT_FILE"`"
+            proc="`ps x |fgrep "$g_basedir/python certmaster" |fgrep -v "$CURRENT_FILE" |fgrep -v 'fgrep'`"
             [ -z "$proc" ] && return 0
 
             log_debug "hit proc[$proc]"
@@ -119,7 +119,7 @@ function check_start() {
             ;;
         "func_slave") 
             log_debug "check whether $g_service exist"
-            proc="`ps x |fgrep "$g_basedir/python funcd" |fgrep -v "$CURRENT_FILE"`"
+            proc="`ps x |fgrep "$g_basedir/python funcd" |fgrep -v "$CURRENT_FILE" |fgrep -v 'fgrep'`"
             [ -z "$proc" ] && return 0
 
             log_debug "hit proc[$proc]"
