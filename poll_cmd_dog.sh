@@ -3,7 +3,7 @@
 cmd_list=$1
 try_stop_times=1
 LIMIT_TIMES=100
-log_file="/tmp/fooyun_poll_cmd_dog.log"
+log_file="$HOME/.fooyun_poll_cmd_dog.log"
 
 cd `dirname $0`
 CMD=`basename $0`
@@ -45,8 +45,8 @@ fi
 log_info "start $CMD for watching commands in $cmd_list"
 
 log_info "save all old commands"
-ps x -o command |awk '/\/proxy\/fy_proxy -i |\/dataserver\/data-server -i /{if($0 !~ /awk | cmd_dog.sh /)print;}' >>$cmd_list
-sed 's#//#/#g; s# \+# #g' $cmd_list |sort -u >${cmd_list}.tmp && mv ${cmd_list}.tmp $cmd_list
+ps x -o command |awk '/\/proxy\/fy_proxy -i |\/dataserver\/data-server -i /{if($0 !~ /awk | cmd_dog.sh |grep/)print;}' >>$cmd_list
+sed 's#//#/#g; s# \+# #g' $cmd_list |grep -v 'grep' |sort -u >${cmd_list}.tmp && mv ${cmd_list}.tmp $cmd_list
 
 #add to crontab
 rs=`crontab -l |fgrep "$CMD $cmd_list" |fgrep -v fgrep`
@@ -92,11 +92,12 @@ do
         try_stop_times=1
     fi
 
-    cat $cmd_list |while read line
+    #read from EOF to begin, last line is the newest
+    tac $cmd_list |while read line
     do
         dname="`dirname "$line"`"
         bname="`basename "$line"`"
-        proc=`ps x|fgrep "$bname"  |fgrep -v "$0" |fgrep -v "fgrep"`
+        proc=`ps x|fgrep "$line"  |fgrep -v "$0" |fgrep -v "fgrep"`
 
         if [ -z "$proc" ]; then
             cd $dname
@@ -108,5 +109,5 @@ do
         fi
     done
 
-    sleep 2
+    sleep 5
 done
