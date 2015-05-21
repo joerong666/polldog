@@ -45,6 +45,7 @@ fi
 log_info "start $CMD for watching commands in $cmd_list"
 
 log_info "save all old commands"
+#cmd_dog.sh is the old script for polling, now is replaced with current file
 ps x -o command |awk '/\/proxy\/fy_proxy -i |\/dataserver\/data-server -i /{if($0 !~ /awk | cmd_dog.sh |grep/)print;}' >>$cmd_list
 sed 's#//#/#g; s# \+# #g' $cmd_list |grep -v 'grep' |sort -u >${cmd_list}.tmp && mv ${cmd_list}.tmp $cmd_list
 
